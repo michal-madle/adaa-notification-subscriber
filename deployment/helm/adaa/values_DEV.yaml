@@ -1,0 +1,30 @@
+# Default values for DEV environment.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+buildNumber: "1"
+imageTag: ${project.version}
+namespace: ob-dev-01-app
+
+serviceNodePort: 30141
+serviceNodePortSandbox: 31141
+
+# Logman setup
+kbLoggingLogmanEnvironment: DEV
+kbLoggingLogmanThresholdLevel: DEBUG
+kbLoggingLogmanServers: kafka-logman-ha-test.kb.cz:9093
+kbLoggingLogmanTopic: app-adaa-in
+kbLoggingLogmanTopicAudit: app-adaaaudit-in
+
+applicationYmlConfigMap: |-
+  spring:
+    banner:
+      location: banner/banner-kubernetes.txt
+  logging:
+    level:
+      org.springframework: INFO
+  truststore:
+    enabled: true
+    location: file:${TRUSTSTORE_LOCATION}
+    password: ${TRUSTSTORE_PASSWORD}
+
+applicationSandboxYmlConfigMap: |-

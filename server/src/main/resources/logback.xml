@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+        This file has been created for k8s only, because k8s loads this file before spring context.
+        Logback configuration is read from logback-spring.xml.
+
+        It is necessary to set logging.config=classpath:logback-spring.xml
+    -->
+</configuration>

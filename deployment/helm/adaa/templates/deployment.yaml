@@ -1,0 +1,142 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Values.namespace  }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    buildNumber: "{{ .Values.buildNumber }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.replicaHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        buildNumber: "{{ .Values.buildNumber }}"
+        token: "{{ randAlphaNum 10 | lower}}"
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.imageRepository }}:{{ .Values.imageTag }}"
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        volumeMounts:
+        - name: non-persistent-storage
+          mountPath: /ob/log/
+        - name: application-kubernetes-yml
+          mountPath: /spring/
+        - name: application-config
+          mountPath: /app_config/cert/
+        ports:
+        - containerPort: {{ .Values.serviceInternalPort }}
+        livenessProbe:
+          httpGet:
+            path: /{{ .Values.applicationUrlContext }}/{{ .Values.isAliveEndpointUri }}
+            port: {{ .Values.serviceInternalPort }}
+{{ toYaml .Values.livenessProbe | indent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /{{ .Values.applicationUrlContext }}/actuator/health
+            port: {{ .Values.serviceInternalPort }}
+{{ toYaml .Values.readinessProbe | indent 10 }}
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        env:
+
+          # Spring profile 'kubernetes' activation
+          - name: SPRING_PROFILES_ACTIVE
+            value: kubernetes
+
+          # Spring additional path for configuration file lookup (in container at /spring )
+          - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+            value: file:///spring/
+
+          # Name of the server the application runs at
+          - name: adaa.audit.server-name
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          # Logging settings
+          - name: LOGMAN_SERVERS
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.logman.servers
+          - name: LOGMAN_TOPIC
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.logman.topic
+          - name: LOGMAN_AUDIT_TOPIC
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.logman.topic.audit
+          - name: LOGMAN_TRESHOLD_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.logman.thresholdLevel
+          - name: LOGMAN_APPLICATION_ENVIRONMENT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.logman.environment
+          - name: ROOT_LOGGER_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: kb.logging.root.level
+          - name: TRUSTSTORE_LOCATION
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: truststore_location
+          - name: KEYSTORE_LOCATION
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}
+                key: keystore_location
+          # Map secrets as environment variables
+          - name: KEYSTORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}
+                key: keystore_password
+          - name: LOGMAN_PRIVATE_KEY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}
+                key: keystore_logman_password
+          - name: TRUSTSTORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}
+                key: truststore_password
+
+      imagePullSecrets:
+      - name: nexus3
+      volumes:
+      - name: non-persistent-storage
+        emptyDir: {}
+      - name: application-kubernetes-yml
+        configMap:
+          name: {{ .Chart.Name }}
+          items:
+          - key: application-kubernetes.yml
+            path: application-kubernetes.yml
+      - name: application-config
+        secret:
+          secretName: {{ .Chart.Name }}
+          items:
+          - key: keystore
+            path: adaa.keystore.jks
+          - key: truststore
+            path: adaa.truststore.jks
+
+---

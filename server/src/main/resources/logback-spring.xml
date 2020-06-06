@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--Environment independent properties for logman -->
+    <property name="LOGMAN_APP_TYPE_PROPERTY" value="app-adaa"/>
+    <property name="LOGMAN_CLIENT_ID_PROPERTY" value="adaa-main-log"/>
+
+    <!--Environment independent properties for audit logman -->
+    <property name="LOGMAN_APP_TYPE_AUDIT_PROPERTY" value="app-adaa"/>
+
+    <!--Include default logging for Open Banking application-->
+    <include resource="log/logback-openbanking-audit.xml"/>
+
+</configuration>

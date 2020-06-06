@@ -1,0 +1,27 @@
+kind: ConfigMap
+apiVersion: v1
+metadata: 
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace }} 
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"    
+    buildNumber: "{{ .Values.buildNumber }}"
+    token: "{{ randAlphaNum 10 | lower}}"
+  annotations:
+    #"helm.sh/hook": "pre-install,pre-upgrade"
+data:
+  application-kubernetes.yml: {{ .Values.applicationYmlConfigMap | quote }}
+  application-sandbox.yml: {{ .Values.applicationSandboxYmlConfigMap | quote }}
+
+  ### Mapped as environment variables
+  # Logging
+  kb.logging.root.level: {{ .Values.kbLoggingRootLevel | quote }}
+
+  # Logman setup
+  kb.logging.logman.environment: {{ .Values.kbLoggingLogmanEnvironment | quote }}
+  kb.logging.logman.servers: {{ .Values.kbLoggingLogmanServers | quote }}
+  kb.logging.logman.topic: {{ .Values.kbLoggingLogmanTopic | quote }}
+  kb.logging.logman.topic.audit: {{ .Values.kbLoggingLogmanTopicAudit | quote }}
+  kb.logging.logman.thresholdLevel: {{ .Values.kbLoggingLogmanThresholdLevel | quote }}
+  truststore_location: {{ .Values.truststore_location | quote }}
+  keystore_location: {{ .Values.keystore_location | quote }}
